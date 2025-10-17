@@ -65,6 +65,9 @@ export default function App() {
 
   useEffect(() => {
     if (scene !== "transition") return;
+    setScore(0);
+    setQuestionCount(1);
+    
     const t = setTimeout(() => setScene("game"), 700);
     return () => clearTimeout(t);
   }, [scene]);
@@ -73,7 +76,7 @@ export default function App() {
     if (scene !== "game") return;
     getQuestion();
   }, [scene]);
-g
+
   useEffect(() => {
     if (scene !== "game") return;
     reset(10);
@@ -86,6 +89,7 @@ g
     setAnswer("");
     if (questionCount >= 7) {
       submitScore(score, username);
+      
       setTimeout(()=> {
 
         setScene("results");

@@ -41,12 +41,7 @@ export default function StartMenu({
       ) : (
         <div className="text-center flex flex-col gap-2">
           <p className="text-green-300 press-start text-sm">Welcome, {username}!</p>
-          <button
-            onClick={() => setEditing(true)}
-            className="text-green-400 underline text-xs"
-          >
-            Not you? Change name
-          </button>
+
         </div>
       )}
 
