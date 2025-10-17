@@ -1,4 +1,5 @@
-export default function GameHUD({ score, streak, countdown }) {
+ import React from "react";
+ function GameHUD({ score, streak, countdown }) {
   return (
     <div className="flex justify-between text-[10px] text-green-400 press-start">
       <div>★ SCORE: {score}</div>
@@ -7,3 +8,4 @@ export default function GameHUD({ score, streak, countdown }) {
     </div>
   );
 }
+export default React.memo(GameHUD);

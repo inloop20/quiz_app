@@ -1,4 +1,6 @@
-export default function InputBar({ answer, setAnswer, onSubmit }) {
+import React from 'react'
+function InputBar({ answer, setAnswer, onSubmit }) {
+  
   const onKeyDown = (e) => { if (e.key === "Enter") onSubmit(); };
 
   return (
@@ -27,3 +29,5 @@ export default function InputBar({ answer, setAnswer, onSubmit }) {
     </div>
   );
 }
+
+export default React.memo(InputBar);

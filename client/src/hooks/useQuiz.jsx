@@ -3,14 +3,17 @@ import socketService from "../socket";
 
 export default function useQuiz(scene) {
   const [question, setQuestion] = useState({ id: 0, question: "" });
+  const [leaderboard,setLeaderboard] = useState({
+    leaderboard:[],
+    rank:null,
+    
+  });
   const [score, setScore] = useState(0);
   const [streak, setStreak] = useState(0);
   const [toast, setToast] = useState(null);
   const [earnedXP, setEarnedXP] = useState(0);
-  const [questionCount,setQuestionCount] = useState(0);
 
   const getQuestion = () => {
-    console.log("Requesting question");
     socketService.send("getQuestion");
   };
 
@@ -18,26 +21,33 @@ export default function useQuiz(scene) {
   
     socketService.send("Answer", { answer, id, timeLeft });
   };
+  const submitScore = (score,username)=>{
+    socketService.send("submitScore",{username,score});
+  }
+
+  const getLeaderboard = (page,username)=>{
+    socketService.send('getLeaderboard',{page,username})
+  }
+  
 
   useEffect(() => {
-    if (scene !== "game") return;
-
+    if (scene !== "game" && scene !== 'leaderboard') return;
+    
     socketService.connect();
 
     socketService.addListener("question", (data) => {
       setQuestion(data);
       setToast(null);
-      setQuestionCount(prev => prev+1);
     });
 
-
+    
     socketService.addListener("checkAnswer", (data) => {
       const { isCorrect, earned, streak: newStreak, score: newScore } = data;
       if (isCorrect) {
         setScore(newScore);
         setStreak(newStreak);
         setEarnedXP(earned);
-        setToast("✓ Correct");
+        setToast("Correct");
         setTimeout(() => setToast(null), 1200);
       } else {
         setStreak(0);
@@ -45,10 +55,15 @@ export default function useQuiz(scene) {
         setTimeout(() => setToast(null), 1200);
       }
     });
-
+    
+    socketService.addListener('getLeaderboard', (data)=>{
+    setLeaderboard(data);
+    
+    })
     return () => {
       socketService.removeListener("question");
       socketService.removeListener("checkAnswer");
+        socketService.removeListener("getLeaderboard");
     };
   }, [scene]);
 
@@ -58,9 +73,12 @@ export default function useQuiz(scene) {
     streak,
     earnedXP,
     toast,
+    leaderboard,
     setToast,
     getQuestion,
     submitAnswer,
-    questionCount
+    submitScore,
+    setScore,
+    getLeaderboard
   };
 }

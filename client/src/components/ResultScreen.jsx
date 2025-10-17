@@ -1,4 +1,9 @@
+import { useEffect } from "react";
+
+
 export default function ResultsScreen({ score, onRestart,onViewLeaderboard,onLobby }) {
+  
+
   return (
     <div className="p-6 border-2 border-green-600 rounded-lg crt bg-black/80 w-[90%] sm:w-[60%] flicker text-green-300 press-start text-[10px]">
       <h2 className="text-green-400 mb-4">Game Over</h2>

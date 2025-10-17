@@ -1,24 +1,24 @@
- import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import BootScreen from "./components/BootScreen";
 import TransitionScreen from "./components/TransitionScreen";
-import GameHUD from "./components/GameHUD";
-import QuestionBox from "./components/QuestionBox";
-import InputBar from "./components/InputBar";
-import PopupFeedback from "./components/PopupFeedback";
-import useTypingEffect from "./hooks/useTypingEffect";
 import useCountdown from "./hooks/useCountdown";
-import useQuiz from './hooks/useQuiz'
+import useQuiz from "./hooks/useQuiz";
 import StartMenu from "./components/StartMenu";
 import ResultsScreen from "./components/ResultScreen";
-export default function App() {
- 
+import GameScene from "./components/GameScene";
+import Leaderboard from "./components/Leaderboard";
 
-  const [scene, setScene] = useState("results"); 
+export default function App() {
+  const [scene, setScene] = useState("menu");
   const [bootStep, setBootStep] = useState(0);
- 
-  const [answer,setAnswer] = useState('');
+  const [answer, setAnswer] = useState("");
+  const [questionCount, setQuestionCount] = useState(1);
+  const [username, setUsername] = useState(() => {
+    return localStorage.getItem("username") || "";
+  });
+
   const {
-   question,
+    question,
     score,
     streak,
     earnedXP,
@@ -26,31 +26,37 @@ export default function App() {
     setToast,
     getQuestion,
     submitAnswer,
-    questionCount
-    
+    submitScore,
+    setScore,
+    leaderboard,
+    getLeaderboard,
   } = useQuiz(scene);
-  const displayedText = useTypingEffect(question.question || "Server Connection Error");
 
-  const { seconds,  start, stop, reset } = useCountdown(10, ()=>{
-    setToast("TIME UP");
-    submitAnswer(' ',question.id,0);
-    setTimeout(() => {
-      getQuestion();  
-      
-      setToast(null);
-    }, 2000);
+  const { seconds, start, stop, reset } = useCountdown(10, () => {
+    if (questionCount >= 3) {
+      submitScore(score, username);
+      setScene("results");
+      setAnswer("");
+      setQuestionCount(1);
+    } else {
+      submitAnswer(" ", question.id, 0);
+      setToast("TIME UP");
+      setQuestionCount((prev) => prev + 1);
+      setTimeout(() => {
+        getQuestion();
+        setToast(null);
+      }, 2000);
+    }
   });
 
   useEffect(() => {
     if (scene !== "boot") return;
-
     let t1, t2;
     if (bootStep < 4) {
       t1 = setTimeout(() => setBootStep((s) => s + 1), 600);
     } else {
       t2 = setTimeout(() => setScene("transition"), 800);
     }
-
     return () => {
       clearTimeout(t1);
       clearTimeout(t2);
@@ -63,34 +69,38 @@ export default function App() {
     return () => clearTimeout(t);
   }, [scene]);
 
- 
   useEffect(() => {
     if (scene !== "game") return;
-    getQuestion();      
+    getQuestion();
   }, [scene]);
 
- 
   useEffect(() => {
     if (scene !== "game") return;
     reset(10);
-    start()  
+    start();
   }, [question]);
 
- 
-  const handleAnswer = () => {
-    if (questionCount >= 10) {
-    setScene("results");
-    return;
-  }
+  const handleAnswer = useCallback(() => {
     submitAnswer(answer, question.id, seconds);
     stop();
-    setAnswer('')
-    setTimeout(() => {
-      getQuestion();      
-      
-    }, 2000);
-     
+    setAnswer("");
+    if (questionCount >= 3) {
+      submitScore(score, username);
+      setScene("results");
+      setQuestionCount(1);
+    } else {
+      setQuestionCount((prev) => prev + 1);
+      setTimeout(() => {
+        getQuestion();
+      }, 1000);
+    }
+  }, [answer, question.id, questionCount, score, username]);
+
+  const handleUsernameChange = (name) => {
+    setUsername(name);
+    localStorage.setItem("username", name);
   };
+
   return (
     <div className="min-h-screen bg-black text-green-300 font-mono relative flex items-center justify-center overflow-hidden select-none">
       <style>{`
@@ -106,33 +116,55 @@ export default function App() {
         .animate-pop-up { animation: popUp 1.2s ease-out forwards; }
       `}</style>
 
-   
       <div className="absolute inset-0 bg-gradient-to-b from-[#010f05] via-[#041b0a] to-black"></div>
       <div className="absolute inset-0 scanlines vignette"></div>
 
-      {/* Scenes */}
-
       {scene === "results" && (
-  <ResultsScreen score={score}  onViewLeaderboard={() => setScene("leaderboard")}
-   onRestart={() => setScene("boot")} onLobby ={()=> setScene('menu')} />
-)}
+        <ResultsScreen
+          score={score}
+          onViewLeaderboard={() => setScene("leaderboard")}
+          onRestart={() => {
+            setBootStep(0);
+            setScore(0);
+            setScene("boot");
+          }}
+          onLobby={() => setScene("menu")}
+        />
+      )}
 
       {scene === "menu" && (
-  <StartMenu
-    onStartGame={() => setScene("boot")}
-    onViewLeaderboard={() => setScene("leaderboard")}
-  />
-)}
+        <StartMenu
+          username={username}
+          setUsername={handleUsernameChange}
+          onStartGame={() => setScene("boot")}
+          onViewLeaderboard={() => setScene("leaderboard")}
+        />
+      )}
+
       {scene === "boot" && <BootScreen bootStep={bootStep} />}
       {scene === "transition" && <TransitionScreen />}
+
       {scene === "game" && (
-        <div className="w-[90%] sm:w-[70%] md:w-[60%] lg:w-[50%] h-[80vh] border-2 border-green-600 rounded-lg bg-black/70 p-4 flex flex-col justify-between crt flicker">
-          <GameHUD score={score} streak={streak} countdown={seconds} />
-          <QuestionBox displayedText={displayedText} question={question} />
-          <InputBar answer={answer} setAnswer={setAnswer} onSubmit={handleAnswer} />
-        
-          <PopupFeedback toast={toast} streak={streak}  earnedXP={earnedXP} />
-        </div>
+        <GameScene
+          score={score}
+          streak={streak}
+          seconds={seconds}
+          question={question}
+          answer={answer}
+          setAnswer={setAnswer}
+          handleAnswer={handleAnswer}
+          toast={toast}
+          earnedXP={earnedXP}
+        />
+      )}
+
+      {scene === "leaderboard" && (
+        <Leaderboard
+          goToLobby={() => setScene("menu")}
+          getLeaderboard={getLeaderboard}
+          username={username}
+          leaderboard={leaderboard}
+        />
       )}
     </div>
   );

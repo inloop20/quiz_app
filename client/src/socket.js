@@ -2,21 +2,19 @@ class SocketService {
   constructor() {
     this.ws = null;
     this.listeners = {};
-    this.messageBuffer = []; // store messages before connection
+    this.messageBuffer = [];
     this.url = null;
   }
 
   connect(url = "ws://localhost:3000") {
-    if (this.ws) return this.ws; // already connected
+    if (this.ws) return this.ws;
 
     this.url = url;
     this.ws = new WebSocket(url);
 
     this.ws.onopen = () => {
-      console.log("WebSocket connected");
-
       // flush buffered messages
-      this.messageBuffer.forEach(msg => {
+      this.messageBuffer.forEach((msg) => {
         this.ws.send(JSON.stringify(msg));
       });
       this.messageBuffer = [];
@@ -36,7 +34,6 @@ class SocketService {
     };
 
     this.ws.onclose = () => {
-      console.log("WebSocket closed. Reconnecting...");
       setTimeout(() => this.connect(this.url), 1000);
     };
 
@@ -47,9 +44,7 @@ class SocketService {
     const message = { type, payload };
     if (this.ws?.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify(message));
-      console.log("Message sent:", message);
     } else {
-      console.log("Socket not ready, buffering message:", message);
       this.messageBuffer.push(message);
     }
   }
