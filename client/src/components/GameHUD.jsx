@@ -1,10 +1,13 @@
  import React from "react";
- function GameHUD({ score, streak, countdown }) {
+ function GameHUD({ score, streak, countdown,questionCount }) {
   return (
     <div className="flex justify-between text-[10px] text-green-400 press-start">
       <div>★ SCORE: {score}</div>
       <div>⏳ {countdown}s</div>
       <div>STREAK: {streak}x</div>
+        <div>
+        {questionCount}/7
+      </div>
     </div>
   );
 }

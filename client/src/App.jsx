@@ -33,7 +33,7 @@ export default function App() {
   } = useQuiz(scene);
 
   const { seconds, start, stop, reset } = useCountdown(10, () => {
-    if (questionCount >= 3) {
+    if (questionCount >= 7) {
       submitScore(score, username);
       setScene("results");
       setAnswer("");
@@ -73,7 +73,7 @@ export default function App() {
     if (scene !== "game") return;
     getQuestion();
   }, [scene]);
-
+g
   useEffect(() => {
     if (scene !== "game") return;
     reset(10);
@@ -84,10 +84,13 @@ export default function App() {
     submitAnswer(answer, question.id, seconds);
     stop();
     setAnswer("");
-    if (questionCount >= 3) {
+    if (questionCount >= 7) {
       submitScore(score, username);
-      setScene("results");
-      setQuestionCount(1);
+      setTimeout(()=> {
+
+        setScene("results");
+        setQuestionCount(1);
+      },1000)
     } else {
       setQuestionCount((prev) => prev + 1);
       setTimeout(() => {
@@ -146,6 +149,7 @@ export default function App() {
 
       {scene === "game" && (
         <GameScene
+          questionCount={questionCount}
           score={score}
           streak={streak}
           seconds={seconds}
